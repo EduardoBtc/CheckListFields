@@ -1,0 +1,26 @@
+<template>
+    <lightning-card title="CheckList das Pendências" icon-name="custom:custom18">
+        <template if:true={statusVerifyFields}>
+            <div class="slds-p-around_medium">
+                <ul class="slds-list_vertical slds-has-dividers_top-space">
+                    <template for:each={fieldsVerifyList} for:item="field">
+                        <li style="font-size: medium; padding-bottom: 0.2rem;" key={field.key}>
+                            <template if:true={field.value}>
+                                <lightning-icon icon-name='action:approval' alternative-text='Preenchido'
+                                    size='xx-small' title='Preenchido'></lightning-icon>
+                            </template>
+                            <template if:false={field.value}>
+                                <lightning-icon icon-name='action:close' alternative-text='Não Preenchido'
+                                    size='xx-small' title='Não Preenchido'></lightning-icon>
+                            </template>
+                            <strong> {field.key}</strong>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </template>
+        <template if:false={statusVerifyFields}>
+            <p style="text-align: center;">Nenhuma verificação de campos para este estágio.</p>
+        </template>
+    </lightning-card>
+</template>

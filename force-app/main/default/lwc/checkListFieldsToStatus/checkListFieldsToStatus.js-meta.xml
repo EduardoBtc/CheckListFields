@@ -1,0 +1,79 @@
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	<apiVersion>61.0</apiVersion>
+	<isExposed>true</isExposed>
+	<masterLabel>CheckList fields status</masterLabel>
+	<targets>
+		<target>lightning__RecordPage</target>
+	</targets>
+	<targetConfigs>
+		<targetConfig targets="lightning__RecordPage">
+			<supportedFormFactors>
+				<supportedFormFactor type="Small" />
+				<supportedFormFactor type="Large" />
+			</supportedFormFactors>
+			<property name="statusField" type="String" label="Campo de Status do objeto em tela"
+				default="Status" />
+
+			<property name="Etapa1" type="String" label="Etapa 1"
+				description="Nome API do primeiro status" />
+			<property name="CamposEtapa1" type="String" label="Campos Etapa 1"
+				description="API dos Campos que serão verificados na Etapa 1" />
+
+			<property name="Etapa2" type="String" label="Etapa 2"
+				description="Nome API do Segundo status" />
+			<property name="CamposEtapa2" type="String" label="Campos Etapa 2"
+				description="API dos Campos que serão verificados na Etapa 2" />
+
+			<property name="Etapa3" type="String" label="Etapa 3"
+				description="Nome API do terceiro status" />
+			<property name="CamposEtapa3" type="String" label="Campos Etapa 3"
+				description="API dos Campos que serão verificados na Etapa 3" />
+
+			<property name="Etapa4" type="String" label="Etapa 4"
+				description="Nome API do quarto status" />
+			<property name="CamposEtapa4" type="String" label="Campos Etapa 4"
+				description="API dos Campos que serão verificados na Etapa 4" />
+
+			<property name="Etapa5" type="String" label="Etapa 5"
+				description="Nome API do quinto status" />
+			<property name="CamposEtapa5" type="String" label="Campos Etapa 5"
+				description="API dos Campos que serão verificados na Etapa 5" />
+
+			<property name="relatedObjectName1" type="String"
+				label="Nome de API do objeto relacionado"
+				description="Nome de API do objeto relacionado" />
+			<property name="screenObjectName1" type="String" label="Nome que será exibido"
+				description="Nome que será exibido" />
+			<property name="fieldRelationship1" type="String"
+				label="Campo Lookup do objeto para o Lead"
+				description="Campo Lookup do objeto para o Lead" />
+			<property name="stageRelationship1" type="String"
+				label="Em qual etapa do fluxo deve ser verificado"
+				description="Em qual etapa do fluxo deve ser verificado" />
+
+			<property name="relatedObjectName2" type="String"
+				label="Nome de API do objeto relacionado"
+				description="Nome de API do objeto relacionado" />
+			<property name="screenObjectName2" type="String" label="Nome que será exibido"
+				description="Nome que será exibido" />
+			<property name="fieldRelationship2" type="String"
+				label="Campo Lookup do objeto para o Lead"
+				description="Campo Lookup do objeto para o Lead" />
+			<property name="stageRelationship2" type="String"
+				label="Em qual etapa do fluxo deve ser verificado"
+				description="Em qual etapa do fluxo deve ser verificado" />
+
+			<property name="relatedObjectName3" type="String"
+				label="Nome de API do objeto relacionado"
+				description="Nome de API do objeto relacionado" />
+			<property name="screenObjectName3" type="String" label="Nome que será exibido"
+				description="Nome que será exibido" />
+			<property name="fieldRelationship3" type="String"
+				label="Campo Lookup do objeto para o Lead"
+				description="Campo Lookup do objeto para o Lead" />
+			<property name="stageRelationship3" type="String"
+				label="Em qual etapa do fluxo deve ser verificado"
+				description="Em qual etapa do fluxo deve ser verificado" />
+		</targetConfig>
+	</targetConfigs>
+</LightningComponentBundle>
