@@ -1,5 +1,10 @@
 <template>
     <lightning-card title="CheckList das Pendências" icon-name="custom:custom18">
+
+        <div slot="actions">
+            <lightning-badge label={totalFieldsEmpty} class="slds-badge_inverse"></lightning-badge>
+        </div>
+
         <template if:true={statusVerifyFields}>
             <div class="slds-p-around_medium">
                 <ul class="slds-list_vertical slds-has-dividers_top-space">
@@ -19,6 +24,7 @@
                 </ul>
             </div>
         </template>
+
         <template if:false={statusVerifyFields}>
             <p style="text-align: center;">Nenhuma verificação de campos para este estágio.</p>
         </template>

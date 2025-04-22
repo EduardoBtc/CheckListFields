@@ -1,3 +1,15 @@
 <template>
-    <h1>patchCheckListFieldsToStatus</h1>
+    <lightning-card variant="Narrow">
+        <div class="slds-p-horizontal_small">
+            <template if:true={currentStatus}>
+                <lightning-progress-indicator current-step={currentStatus} type="path" variant="base">
+                    <template for:each={fieldStatusOptions} for:item="step">
+                        <lightning-progress-step label={step.value} title={step.value} value={step.value}
+                            key={step.value} onclick={handleStepClick}>
+                        </lightning-progress-step>
+                    </template>
+                </lightning-progress-indicator>
+            </template>
+        </div>
+    </lightning-card>
 </template>

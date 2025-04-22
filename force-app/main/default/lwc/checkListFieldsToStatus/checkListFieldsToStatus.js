@@ -4,6 +4,8 @@ import { CreateShowToastEvent } from "c/utilsComponent";
 import { RefreshEvent } from 'lightning/refresh';
 import verifyFildsFillStage from '@salesforce/apex/CheckListFieldsController.verifyFildsFillStage';
 import checkRelatedList from '@salesforce/apex/CheckListFieldsController.getRelatedRecords';
+import { subscribe,publish, MessageContext } from 'lightning/messageService';
+import COMPONENT_COMMUNICATION_CHANNEL from "@salesforce/messageChannel/CheckListFieldsToSatusChannel__c";
 
 export default class VerifyFieldsLeadToStatus extends LightningElement {
     @api recordId;
@@ -43,6 +45,8 @@ export default class VerifyFieldsLeadToStatus extends LightningElement {
     currentStatus;
     updateLastStatusRecord = true;
 
+    @wire(MessageContext) 
+    messageContext;
 
     @wire(getRecord, { recordId: '$recordId', layoutTypes: ['Full'], modes: ['View'] })
     async loadFields({ error, data }) {
@@ -58,6 +62,20 @@ export default class VerifyFieldsLeadToStatus extends LightningElement {
                 this.dispatchEvent(new RefreshEvent());
             }
         }
+    }
+
+    connectedCallback() {
+        subscribe(this.messageContext, COMPONENT_COMMUNICATION_CHANNEL, 
+            (message) => {
+            if (message.action == 'getFieldsToFill') {
+                let hasFieldEmpty = Object.entries(this.fieldsVerifyMap)
+                                    .filter(([key, value]) => value === false)
+                                    .map(([key]) => key);
+
+                publish(this.messageContext, COMPONENT_COMMUNICATION_CHANNEL, { action: 'responseGetFieldsToFill', hasFieldEmpty: hasFieldEmpty });
+            }
+            
+        });
     }
 
     async checkFieldsStage() {
@@ -123,7 +141,6 @@ export default class VerifyFieldsLeadToStatus extends LightningElement {
             this.statusVerifyFields = true;
 
         } catch (error) {
-            console.error(error);
             CreateShowToastEvent(this, 'Erro ao verificar campos', error.body?.message || error.message, 'error');
         }
     }
@@ -170,12 +187,15 @@ export default class VerifyFieldsLeadToStatus extends LightningElement {
             });
             return result || [];
         } catch (error) {
-            console.error(error);
             return [];
         }
     }
 
     get fieldsVerifyList() {
         return Object.entries(this.fieldsVerifyMap).map(([key, value]) => ({ key, value }));
+    }
+
+    get totalFieldsEmpty() {
+        return 'Número de campos para preencher: ' + Object.values(this.fieldsVerifyMap).filter(value => !value).length;
     }
 }

@@ -18,6 +18,21 @@ public with sharing class PatchCheckListFieldsToStatusController {
         return pickListOptions;
     }
 
+    @AuraEnabled
+    public static String getCurrentStatus(String objectApiName, String fieldApiName, String recordId) {
+        String currentStatus = '';
+
+        try {
+            String query = 'SELECT ' + fieldApiName + ' FROM ' + objectApiName + ' WHERE Id = :recordId';
+            SObject record = Database.query(query);
+            currentStatus = (String) record.get(fieldApiName);
+        }catch (Exception ex) {
+            throw new AuraHandledException('Error fetching current status: ' + ex.getMessage());
+        }
+
+        return currentStatus;
+    }
+
     private class PickListResult {
         @AuraEnabled
         public String label { get; set; }
