@@ -1,0 +1,17 @@
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	<apiVersion>61.0</apiVersion>
+	<isExposed>true</isExposed>
+	<masterLabel>Patch check list fields to status</masterLabel>
+	<targets>
+		<target>lightning__RecordPage</target>
+	</targets>
+	<targetConfigs>
+		<targetConfig targets="lightning__RecordPage">
+			<property name="fieldStatusObject" type="String" description="Campo de Status do objeto em tela" label="Field status object" placeholder="Campo de Status do objeto em tela" required="true" />
+			<supportedFormFactors>
+				<supportedFormFactor type="Small"/>
+				<supportedFormFactor type="Large"/>
+			</supportedFormFactors>
+		</targetConfig>
+	</targetConfigs>
+</LightningComponentBundle>
