@@ -7,7 +7,7 @@ import checkRelatedList from '@salesforce/apex/CheckListFieldsController.getRela
 import { subscribe,publish, MessageContext } from 'lightning/messageService';
 import COMPONENT_COMMUNICATION_CHANNEL from "@salesforce/messageChannel/CheckListFieldsToSatusChannel__c";
 
-export default class VerifyFieldsLeadToStatus extends LightningElement {
+export default class CheckListFieldsToStatus extends LightningElement {
     @api recordId;
     @api objectApiName;
     @api statusField = 'Status';
