@@ -1,3 +1,4 @@
+/* eslint-disable @lwc/lwc/no-leading-uppercase-api-name */
 import { LightningElement, api, wire } from "lwc";
 import { getRecord } from 'lightning/uiRecordApi';
 import { CreateShowToastEvent } from "c/utilsComponent";
@@ -197,5 +198,31 @@ export default class CheckListFieldsToStatus extends LightningElement {
 
     get totalFieldsEmpty() {
         return 'Número de campos para preencher: ' + Object.values(this.fieldsVerifyMap).filter(value => !value).length;
+    }
+
+    get formattedFields() {
+        return Object.entries(this.fieldsVerifyMap).map(([key, value]) => {
+            return {
+                key,
+                value,
+                iconName: value ? 'action:approval' : 'action:close',
+                iconAlt: value ? 'Preenchido' : 'Não Preenchido',
+                iconClass: value ? 'slds-icon-text-success' : 'slds-icon-text-error'
+            };
+        });
+    }
+
+    get badgeClass() {
+        const total = this.totalFieldsEmptyCount;
+        return total > 0 ? 'slds-badge slds-theme_error' : 'slds-badge slds-theme_success';
+    }
+
+    get totalFieldsEmptyLabel() {
+        const total = this.totalFieldsEmptyCount;
+        return `Número de campos para preencher: ${total}`;
+    }
+
+    get totalFieldsEmptyCount() {
+        return Object.values(this.fieldsVerifyMap).filter(value => !value).length;
     }
 }
