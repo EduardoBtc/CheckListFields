@@ -1,0 +1,293 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="custom:custom18">
+        <div class="slds-p-around_medium">
+            <!-- Spinner para feedback visual durante carregamentos -->
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Carregando" size="medium"></lightning-spinner>
+            </template>
+
+            <!-- Indicador de Progresso -->
+            <lightning-progress-indicator current-step={currentStep} type="path" variant="base">
+                <lightning-progress-step label="Selecionar Objeto" value="objeto"
+                    onclick={navigateToStep}></lightning-progress-step>
+                <lightning-progress-step label="Configurar Etapas" value="etapas"
+                    onclick={navigateToStep}></lightning-progress-step>
+                <lightning-progress-step label="Listas Relacionadas" value="relacionados"
+                    onclick={navigateToStep}></lightning-progress-step>
+                <lightning-progress-step label="Revisão e Salvar" value="revisao"
+                    onclick={navigateToStep}></lightning-progress-step>
+            </lightning-progress-indicator>
+
+            <!-- Conteúdo das etapas -->
+            <div class="slds-p-top_medium">
+                <!-- Etapa 1: Seleção de Objeto -->
+                <template if:true={isObjectTabActive}>
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_8-of-12">
+                            <lightning-input label="Nome da Configuração" type="text" value={configName}
+                                onchange={handleConfigNameChange} required></lightning-input>
+
+                            <lightning-combobox name="objectSelector" label="Selecione o Objeto" value={selectedObject}
+                                options={availableObjects} onchange={handleObjectChange}
+                                placeholder="-- Selecione um Objeto --" required></lightning-combobox>
+
+                            <template if:true={selectedObject}>
+                                <lightning-combobox name="statusFieldSelector" label="Selecione o Campo de Status"
+                                    value={selectedStatusField} options={picklistFields}
+                                    onchange={handleStatusFieldChange} placeholder="-- Selecione um Campo de Status --"
+                                    required></lightning-combobox>
+                            </template>
+
+                            <div class="slds-p-top_medium">
+                                <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
+                                    disabled={isLoading}></lightning-button>
+                            </div>
+                        </div>
+
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12">
+                            <template if:true={savedConfigurations.length}>
+                                <div class="slds-box slds-theme_shade">
+                                    <h3 class="slds-text-heading_small slds-p-bottom_small">Configurações Salvas</h3>
+                                    <p class="slds-text-body_small slds-p-bottom_small slds-text-color_success">
+                                        <lightning-icon icon-name="utility:edit" size="xx-small"
+                                            class="slds-p-right_xx-small"></lightning-icon>
+                                        Clique em um item para editar a configuração
+                                    </p>
+                                    <ul class="slds-has-dividers_bottom-space">
+                                        <template for:each={savedConfigurations} for:item="config">
+                                            <li key={config.Id} class="slds-item">
+                                                <a href="javascript:void(0);" onclick={handleLoadConfiguration}
+                                                    data-id={config.Id}>
+                                                    <strong>{config.Name}</strong>
+                                                    <p class="slds-text-body_small">{config.TargetObject__c}
+                                                        ({config.StatusField__c})</p>
+                                                </a>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Etapa 2: Configuração de Etapas -->
+                <template if:true={isStepsTabActive}>
+                    <template if:true={hasSteps}>
+                        <div class="slds-text-heading_small slds-p-bottom_medium">
+                            Selecione os campos a serem verificados em cada etapa
+                        </div>
+
+                        <lightning-tabset>
+                            <template for:each={steps} for:item="step" for:index="index">
+                                <lightning-tab key={step.etapa} label={step.label}>
+                                    <c-check-list-fields-step-editor step-index={index} step={step}
+                                        object-fields={objectFields} onfieldsselection={handleFieldSelection}>
+                                    </c-check-list-fields-step-editor>
+                                </lightning-tab>
+                            </template>
+                        </lightning-tabset>
+
+                        <div class="slds-p-top_medium slds-grid slds-grid_align-spread">
+                            <div>
+                                <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
+                                    disabled={isLoading}></lightning-button>
+                                <template if:true={isEditMode}>
+                                    <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
+                                        class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                                </template>
+                            </div>
+                            <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
+                                disabled={isLoading}></lightning-button>
+                        </div>
+                    </template>
+                </template>
+
+                <!-- Etapa 3: Listas Relacionadas -->
+                <template if:true={isRelatedTabActive}>
+                    <div class="slds-text-heading_small slds-p-bottom_medium">
+                        Configure as listas relacionadas a serem verificadas
+                    </div>
+
+                    <lightning-button variant="brand" label="Adicionar Lista Relacionada" icon-name="utility:add"
+                        onclick={handleAddRelatedList} class="slds-m-bottom_medium"></lightning-button>
+
+                    <template if:true={hasRelatedLists}>
+                        <div class="slds-box slds-theme_default">
+                            <ul class="slds-has-dividers_bottom-space">
+                                <template for:each={relatedLists} for:item="list" for:index="index">
+                                    <li key={list.fieldRelationship} class="slds-item" data-index={index}>
+                                        <div class="slds-grid slds-grid_align-spread">
+                                            <div>
+                                                <strong>{list.label}</strong>
+                                                <p class="slds-text-body_small">
+                                                    Objeto: {list.objectApiName} | Campo: {list.fieldRelationship} |
+                                                    Etapa: {list.stage}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <lightning-button-icon icon-name="utility:delete"
+                                                    alternative-text="Remover" data-index={index}
+                                                    onclick={removeRelatedList}
+                                                    variant="border-filled"></lightning-button-icon>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+
+                    <div class="slds-p-top_medium slds-grid slds-grid_align-spread">
+                        <div>
+                            <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
+                                disabled={isLoading}></lightning-button>
+                            <template if:true={isEditMode}>
+                                <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
+                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                            </template>
+                        </div>
+                        <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
+                            disabled={isLoading}></lightning-button>
+                    </div>
+                </template>
+
+                <!-- Etapa 4: Revisão e Salvar -->
+                <template if:true={isReviewTabActive}>
+                    <div class="slds-text-heading_small slds-p-bottom_medium">
+                        Revisar e Salvar Configuração
+                    </div>
+
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                            <div class="slds-box slds-theme_default">
+                                <h3 class="slds-text-heading_small">Informações Básicas</h3>
+                                <dl class="slds-dl_horizontal slds-p-top_small">
+                                    <dt class="slds-dl_horizontal__label">Nome:</dt>
+                                    <dd class="slds-dl_horizontal__detail">{configName}</dd>
+                                    <dt class="slds-dl_horizontal__label">Objeto:</dt>
+                                    <dd class="slds-dl_horizontal__detail">{selectedObject}</dd>
+                                    <dt class="slds-dl_horizontal__label">Campo de Status:</dt>
+                                    <dd class="slds-dl_horizontal__detail">{selectedStatusField}</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                            <div class="slds-box slds-theme_default">
+                                <h3 class="slds-text-heading_small">JSON de Configuração</h3>
+                                <pre class="slds-p-top_small slds-scrollable_y"
+                                    style="max-height: 200px;">{configurationJSON}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="slds-p-top_medium slds-grid slds-grid_align-spread">
+                        <div>
+                            <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
+                                disabled={isLoading}></lightning-button>
+                            <template if:true={isEditMode}>
+                                <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
+                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                            </template>
+                        </div>
+                        <lightning-button variant="success" label="Salvar Configuração" onclick={saveConfig}
+                            disabled={isLoading}></lightning-button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-card>
+
+    <!-- Lista de Todas as Configurações -->
+    <div class="slds-m-top_large">
+        <lightning-card title="Todas as Configurações" icon-name="standard:settings">
+            <div class="slds-p-around_medium">
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Carregando" size="small"></lightning-spinner>
+                </template>
+
+                <template if:true={hasConfigurations}>
+                    <lightning-datatable key-field="Id" data={savedConfigurations} columns={configColumns}
+                        hide-checkbox-column onrowaction={handleRowAction}>
+                    </lightning-datatable>
+                </template>
+
+                <template if:false={hasConfigurations}>
+                    <div class="slds-illustration slds-illustration_small">
+                        <div class="slds-text-longform">
+                            <p class="slds-text-align_center">Nenhuma configuração encontrada. Crie sua primeira
+                                configuração acima.</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </lightning-card>
+    </div>
+
+    <!-- Modal para adicionar lista relacionada -->
+    <template if:true={showAddRelatedModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+            aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Fechar" onclick={closeRelatedModal}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Fechar</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Adicionar Lista Relacionada</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning-combobox name="relatedObjectSelector" label="Selecione o Objeto Relacionado"
+                        value={selectedRelatedObject} options={availableRelatedObjects}
+                        onchange={handleRelatedObjectChange} placeholder="-- Selecione um Objeto --"
+                        required></lightning-combobox>
+
+                    <lightning-input label="Campo de Relacionamento" placeholder="Ex: AccountId"
+                        value={selectedRelatedField} onchange={handleRelatedFieldChange} required></lightning-input>
+
+                    <lightning-input label="Rótulo na Interface" placeholder="Ex: Contatos" value={selectedRelatedLabel}
+                        onchange={handleRelatedLabelChange} required></lightning-input>
+
+                    <lightning-combobox name="relatedStageSelector" label="Selecione a Etapa para Verificação"
+                        value={selectedRelatedStage} options={statusFieldValues} onchange={handleRelatedStageChange}
+                        placeholder="-- Selecione uma Etapa --" required></lightning-combobox>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Cancelar" onclick={closeRelatedModal}></lightning-button>
+                    <lightning-button variant="brand" label="Adicionar" onclick={saveRelatedList}
+                        class="slds-m-left_x-small"></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Modal de confirmação para excluir configuração -->
+    <template if:true={showDeleteModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true"
+            aria-describedby="modal-content-id-2" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Fechar" onclick={closeDeleteModal}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Fechar</span>
+                    </button>
+                    <h2 id="modal-heading-02" class="slds-modal__title slds-hyphenate">Confirmar Exclusão</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                    <p>Tem certeza que deseja excluir a configuração <strong>{configToDeleteName}</strong>?</p>
+                    <p class="slds-text-color_error slds-m-top_small">Esta ação não pode ser desfeita.</p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Cancelar" onclick={closeDeleteModal}></lightning-button>
+                    <lightning-button variant="destructive" label="Excluir" onclick={confirmDeleteConfiguration}
+                        class="slds-m-left_x-small"></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

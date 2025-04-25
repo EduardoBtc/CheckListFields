@@ -1,33 +1,55 @@
 <template>
     <lightning-card title="CheckList das Pendências" icon-name="custom:custom18">
-        <div slot="actions">
-            <lightning-badge label={totalFieldsEmptyLabel} class={badgeClass}>
-            </lightning-badge>
-        </div>
-
-        <template if:true={statusVerifyFields}>
-            <div class="slds-p-around_small slds-m-bottom_none">
-                <ul class="slds-m-around_none slds-p-around_none">
-                    <template for:each={formattedFields} for:item="field">
-                        <li key={field.key} class="slds-p-vertical_x-small slds-grid slds-align-middle">
-                            <lightning-icon icon-name={field.iconName} alternative-text={field.iconAlt}
-                                title={field.iconAlt} class={field.iconClass} size="x-small">
-                            </lightning-icon>
-                            <span
-                                class="slds-m-left_small slds-text-body_regular slds-text-title_bold slds-align-middle">
-                                {field.key}
-                            </span>
-                        </li>
-                    </template>
-                </ul>
+        <!-- Spinner de carregamento -->
+        <template if:true={isLoading}>
+            <div class="slds-is-relative slds-p-around_small">
+                <lightning-spinner alternative-text="Carregando" size="small"></lightning-spinner>
+                <p class="slds-text-align_center slds-p-top_large">Carregando configuração...</p>
             </div>
         </template>
 
-        <template if:false={statusVerifyFields}>
-            <div class="slds-align_absolute-center slds-p-around_medium">
-                <p class="slds-text-title_bold slds-text-color_weak">Nenhuma verificação de campos para este estágio.
-                </p>
+        <!-- Mensagem de erro -->
+        <template if:true={hasError}>
+            <div class="slds-illustration slds-illustration_small slds-p-around_small">
+                <lightning-icon icon-name="utility:error" alternative-text="Erro" size="small"
+                    class="slds-icon-text-error slds-m-bottom_small"></lightning-icon>
+                <div class="slds-text-longform">
+                    <p class="slds-text-align_center slds-text-color_error">{errorMessage}</p>
+                </div>
             </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <div slot="actions">
+                <lightning-badge label={totalFieldsEmptyLabel} class={badgeClass}>
+                </lightning-badge>
+            </div>
+
+            <template if:true={statusVerifyFields}>
+                <div class="slds-p-around_small slds-m-bottom_none">
+                    <ul class="slds-m-around_none slds-p-around_none">
+                        <template for:each={formattedFields} for:item="field">
+                            <li key={field.key} class="slds-p-vertical_x-small slds-grid slds-align-middle">
+                                <lightning-icon icon-name={field.iconName} alternative-text={field.iconAlt}
+                                    title={field.iconAlt} class={field.iconClass} size="x-small">
+                                </lightning-icon>
+                                <span
+                                    class="slds-m-left_small slds-text-body_regular slds-text-title_bold slds-align-middle">
+                                    {field.key}
+                                </span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </template>
+
+            <template if:false={statusVerifyFields}>
+                <div class="slds-align_absolute-center slds-p-around_medium">
+                    <p class="slds-text-title_bold slds-text-color_weak">Nenhuma verificação de campos para este
+                        estágio.
+                    </p>
+                </div>
+            </template>
         </template>
     </lightning-card>
 </template>

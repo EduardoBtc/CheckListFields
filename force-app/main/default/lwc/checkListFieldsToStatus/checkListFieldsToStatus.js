@@ -5,39 +5,19 @@ import { CreateShowToastEvent } from "c/utilsComponent";
 import { RefreshEvent } from 'lightning/refresh';
 import verifyFildsFillStage from '@salesforce/apex/CheckListFieldsController.verifyFildsFillStage';
 import checkRelatedList from '@salesforce/apex/CheckListFieldsController.getRelatedRecords';
-import { subscribe,publish, MessageContext } from 'lightning/messageService';
+import getConfiguration from '@salesforce/apex/CheckListFieldsController.getConfiguration';
+import { subscribe, publish, MessageContext } from 'lightning/messageService';
 import COMPONENT_COMMUNICATION_CHANNEL from "@salesforce/messageChannel/CheckListFieldsToSatusChannel__c";
 
 export default class CheckListFieldsToStatus extends LightningElement {
     @api recordId;
     @api objectApiName;
     @api statusField = 'Status';
+    @api configId;
 
-    @api relatedObjectName1;
-    @api screenObjectName1;
-    @api fieldRelationship1;
-    @api stageRelationship1;
-
-    @api relatedObjectName2;
-    @api screenObjectName2;
-    @api fieldRelationship2;
-    @api stageRelationship2;
-
-    @api relatedObjectName3;
-    @api screenObjectName3;
-    @api fieldRelationship3;
-    @api stageRelationship3;
-
-    @api Etapa1;
-    @api CamposEtapa1;
-    @api Etapa2;
-    @api CamposEtapa2;
-    @api Etapa3;
-    @api CamposEtapa3;
-    @api Etapa4;
-    @api CamposEtapa4;
-    @api Etapa5;
-    @api CamposEtapa5;
+    _parsedConfig;
+    _steps = [];
+    _relatedLists = [];
 
     statusVerifyFields = false;
     fieldsVerifyMap = {};
@@ -45,6 +25,9 @@ export default class CheckListFieldsToStatus extends LightningElement {
     lastMapFieldStatus;
     currentStatus;
     updateLastStatusRecord = true;
+    isLoading = true;
+    hasError = false;
+    errorMessage = '';
 
     @wire(MessageContext) 
     messageContext;
@@ -53,6 +36,8 @@ export default class CheckListFieldsToStatus extends LightningElement {
     async loadFields({ error, data }) {
         if (error) {
             console.error('Erro ao carregar o registro', error);
+            this.hasError = true;
+            this.errorMessage = 'Erro ao carregar o registro: ' + (error.body?.message || error.message);
         } else if (data) {
             const dynamicField = this.statusField;
 
@@ -66,17 +51,55 @@ export default class CheckListFieldsToStatus extends LightningElement {
     }
 
     connectedCallback() {
+        this.loadConfiguration();
+        
         subscribe(this.messageContext, COMPONENT_COMMUNICATION_CHANNEL, 
             (message) => {
-            if (message.action == 'getFieldsToFill') {
-                let hasFieldEmpty = Object.entries(this.fieldsVerifyMap)
-                                    .filter(([key, value]) => value === false)
+            if (message.action === 'getFieldsToFill') {
+                const hasFieldEmpty = Object.entries(this.fieldsVerifyMap)
+                                    .filter(([, value]) => value === false)
                                     .map(([key]) => key);
 
                 publish(this.messageContext, COMPONENT_COMMUNICATION_CHANNEL, { action: 'responseGetFieldsToFill', hasFieldEmpty: hasFieldEmpty });
             }
-            
         });
+    }
+
+    async loadConfiguration() {
+        if (!this.configId) {
+            this.hasError = true;
+            this.errorMessage = 'ID de configuração não fornecido. Verifique as propriedades do componente.';
+            this.isLoading = false;
+            return;
+        }
+
+        try {
+            const config = await getConfiguration({ configId: this.configId });
+            if (!config) {
+                this.hasError = true;
+                this.errorMessage = 'Configuração não encontrada. Verifique o ID fornecido.';
+                this.isLoading = false;
+                return;
+            }
+
+            // Parsear configuração JSON
+            const parsedConfig = JSON.parse(config.ConfigJSON__c);
+            this._parsedConfig = parsedConfig;
+            this._steps = parsedConfig.steps || [];
+            this._relatedLists = parsedConfig.relatedLists || [];
+            
+            // Se já tivermos o status atual, atualizar a verificação
+            if (this.currentStatus) {
+                await this.handleStatusChange(this.currentStatus);
+            }
+            
+            this.isLoading = false;
+        } catch (error) {
+            console.error('Erro ao carregar configuração:', error);
+            this.hasError = true;
+            this.errorMessage = 'Erro ao carregar configuração: ' + (error.body?.message || error.message);
+            this.isLoading = false;
+        }
     }
 
     async checkFieldsStage() {
@@ -101,22 +124,18 @@ export default class CheckListFieldsToStatus extends LightningElement {
         this.statusVerifyFields = false;
         this.fieldsVerifyMap = {};
 
+        // Se a configuração ainda não foi carregada, aguarde
+        if (!this._parsedConfig) {
+            await this.loadConfiguration();
+        }
+
         await this.fetchRelatedRecords(status);
 
-        if (status === this.Etapa1)
-            await this.verifyFildsFillStage(this.CamposEtapa1);
-
-        if (status === this.Etapa2)
-            await this.verifyFildsFillStage(this.CamposEtapa2);
-
-        if (status === this.Etapa3)
-            await this.verifyFildsFillStage(this.CamposEtapa3);
-
-        if (status === this.Etapa4)
-            await this.verifyFildsFillStage(this.CamposEtapa4);
-
-        if (status === this.Etapa5)
-            await this.verifyFildsFillStage(this.CamposEtapa5);
+        // Procurar a etapa correspondente ao status atual
+        const matchingStep = this._steps.find(step => step.etapa === status);
+        if (matchingStep && matchingStep.campos) {
+            await this.verifyFildsFillStage(matchingStep.campos);
+        }
 
         this.lastMapFieldStatus = this.fieldsVerifyMap;
         this.dispatchEvent(new RefreshEvent());
@@ -148,30 +167,28 @@ export default class CheckListFieldsToStatus extends LightningElement {
 
     async fetchRelatedRecords(status) {
         const updates = {};
+        const promises = [];
 
-        if (this.relatedObjectName1 && this.fieldRelationship1 && status === this.stageRelationship1) {
-            const relatedRecords1 = await this.checkRelatedListJS({
-                relatedObjectName: this.relatedObjectName1,
-                fieldRelationship: this.fieldRelationship1
+        // Coletar todas as promessas de verificação de listas relacionadas
+        this._relatedLists
+            .filter(relatedList => relatedList.stage === status && relatedList.objectApiName && relatedList.fieldRelationship)
+            .forEach(relatedList => {
+                const promise = this.checkRelatedListJS({
+                    relatedObjectName: relatedList.objectApiName,
+                    fieldRelationship: relatedList.fieldRelationship
+                })
+                .then(result => {
+                    updates[relatedList.label] = result.length > 0;
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar lista relacionada:', error);
+                });
+                
+                promises.push(promise);
             });
-            updates[this.screenObjectName1] = relatedRecords1.length > 0;
-        }
 
-        if (this.relatedObjectName2 && this.fieldRelationship2 && status === this.stageRelationship2) {
-            const relatedRecords2 = await this.checkRelatedListJS({
-                relatedObjectName: this.relatedObjectName2,
-                fieldRelationship: this.fieldRelationship2
-            });
-            updates[this.screenObjectName2] = relatedRecords2.length > 0;
-        }
-
-        if (this.relatedObjectName3 && this.fieldRelationship3 && status === this.stageRelationship3) {
-            const relatedRecords3 = await this.checkRelatedListJS({
-                relatedObjectName: this.relatedObjectName3,
-                fieldRelationship: this.fieldRelationship3
-            });
-            updates[this.screenObjectName3] = relatedRecords3.length > 0;
-        }
+        // Aguardar todas as promessas serem concluídas
+        await Promise.all(promises);
 
         this.fieldsVerifyMap = {
             ...this.fieldsVerifyMap,

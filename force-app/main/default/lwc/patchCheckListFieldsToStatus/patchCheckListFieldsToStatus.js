@@ -31,10 +31,9 @@ export default class PatchCheckListFieldsToStatus extends LightningElement {
 		})
 		.then(result => {
 			this.currentStatus = result;
-		}
-		)
+		})
 		.catch(error => {
-			console.log(error);
+			console.error('Erro ao obter status atual:', error);
 		});
 	}
 
@@ -43,14 +42,12 @@ export default class PatchCheckListFieldsToStatus extends LightningElement {
 			objectApiName: this.objectApiName,
 			fieldApiName: this.fieldStatusObject
 		})
-			.then(result => {
-				this.fieldStatusOptions = result;
-			}
-			)
-			.catch(error => {
-				console.log(error);
-			});
-		
+		.then(result => {
+			this.fieldStatusOptions = result;
+		})
+		.catch(error => {
+			console.error('Erro ao obter opções de status:', error);
+		});
 	}
 
 	handleStepClick(event) {
@@ -63,33 +60,31 @@ export default class PatchCheckListFieldsToStatus extends LightningElement {
 
 	subscribeToFieldResponse() {
 		subscribe(this.messageContext, COMPONENT_COMMUNICATION_CHANNEL, (message) => {
-			if (message.action == 'responseGetFieldsToFill') {
+			if (message.action === 'responseGetFieldsToFill') {
 				let hasFieldEmpty = message.hasFieldEmpty;
 
 				if (hasFieldEmpty.length > 0) {
 					CreateShowToastEvent(this, 'Campos a serem preenchidos', 'Existem campos a serem preenchidos', 'error');
 				} else {
 					this.updateRecord(this.lastStepSelected);
-					
 				}
 			}
 		});
 	}
 
 	updateRecord(statusUpdate) {
-
 		const fields = {};
-		fields['Id'] = this.recordId;
+		fields.Id = this.recordId;
 		fields[this.fieldStatusObject] = statusUpdate;
 		const recordInput = { fields };
 		this.currentStatus = statusUpdate;
 
 		updateRecord(recordInput)
 		.then(() => {
-				CreateShowToastEvent(this, 'Status atualizado', 'Status atualizado com sucesso', 'success');
-			})
-			.catch(error => {
-				console.log(error);
-			});
+			CreateShowToastEvent(this, 'Status atualizado', 'Status atualizado com sucesso', 'success');
+		})
+		.catch(error => {
+			console.error('Erro ao atualizar registro:', error);
+		});
 	}
 }
