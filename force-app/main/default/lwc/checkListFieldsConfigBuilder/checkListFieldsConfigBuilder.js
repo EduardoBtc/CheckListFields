@@ -31,15 +31,12 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track selectedRelatedLabel = '';
     @track availableRelatedObjects = [];
 
-    // Para o modal de exclusão
     @track showDeleteModal = false;
     @track configToDeleteId = '';
     @track configToDeleteName = '';
 
-    // Flag para controlar o scroll automático para a tabela após atualização
     scrollToTable = false;
 
-    // Definição das colunas para a tabela de configurações
     configColumns = [
         { 
             label: 'ID', 
@@ -105,7 +102,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
     ];
 
-    // Mapeamento das etapas concluídas
     @track completedSteps = {
         objeto: false,
         etapas: false,
@@ -123,13 +119,10 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     }
 
     connectedCallback() {
-        // Inicializa o objeto de configuração
         this.initializeConfiguration();
         
-        // Inicializa a flag de scroll
         this.scrollToTable = false;
         
-        // Força a atualização das configurações no carregamento inicial
         this.refreshConfigurations();
     }
 
@@ -201,7 +194,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         getPicklistValues({ objectName: this.selectedObject, fieldName: this.selectedStatusField })
             .then(result => {
                 this.statusFieldValues = result;
-                // Criar etapas iniciais com base nos valores do campo de status
                 this.steps = result.map(item => {
                     return {
                         etapa: item.value,
@@ -212,10 +204,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                 });
                 this.isLoading = false;
                 
-                // Marcar a etapa de objeto como concluída
                 this.completedSteps.objeto = true;
                 
-                // Avança para a próxima etapa
                 this.currentTab = 'etapas';
             })
             .catch(error => {
@@ -254,11 +244,9 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
     }
 
-    // Método para navegar entre etapas usando o progress indicator
     navigateToStep(event) {
         const selectedStep = event.target.value;
         
-        // Verificar se pode navegar para essa etapa
         if (this.canNavigateToStep(selectedStep)) {
             this.currentTab = selectedStep;
         } else {
@@ -266,11 +254,10 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
     }
     
-    // Verificar se pode navegar para uma etapa específica
     canNavigateToStep(step) {
         switch(step) {
             case 'objeto':
-                return true; // Sempre pode voltar para a primeira etapa
+                return true;
             case 'etapas':
                 return this.completedSteps.objeto || this.selectedObject && this.selectedStatusField && this.configName;
             case 'relacionados':
@@ -285,7 +272,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     handleFieldSelection(event) {
         const { stepIndex, field, selected } = event.detail;
         
-        // Clonar para não modificar diretamente a propriedade reativa
         const updatedSteps = [...this.steps];
         
         if (!updatedSteps[stepIndex].selectedFields) {
@@ -293,19 +279,16 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
 
         if (selected) {
-            // Adicionar campo se não estiver na lista
             if (!updatedSteps[stepIndex].selectedFields.includes(field)) {
                 updatedSteps[stepIndex].selectedFields.push(field);
             }
         } else {
-            // Remover campo se estiver na lista
             const fieldIndex = updatedSteps[stepIndex].selectedFields.indexOf(field);
             if (fieldIndex !== -1) {
                 updatedSteps[stepIndex].selectedFields.splice(fieldIndex, 1);
             }
         }
 
-        // Atualizar a string de campos
         updatedSteps[stepIndex].campos = updatedSteps[stepIndex].selectedFields.join(',');
         
         this.steps = updatedSteps;
@@ -313,7 +296,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
 
     handleAddRelatedList() {
         this.showAddRelatedModal = true;
-        // Carregar objetos para relacionamento
         this.availableRelatedObjects = [...this.availableObjects];
     }
 
@@ -378,7 +360,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         return JSON.stringify(config, null, 2);
     }
 
-    // Prepara o JSON para salvamento
     prepareConfigJSON() {
         const config = {
             steps: this.steps.map(step => ({
@@ -388,7 +369,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
             relatedLists: this.relatedLists || []
         };
 
-        // Valida campos obrigatórios
         for (const step of config.steps) {
             if (!step.etapa) {
                 throw new Error('Todas as etapas devem ter um valor');
@@ -404,13 +384,11 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
             return;
         }
 
-        // Validar que o objeto tem dados
         if (!this.steps.length) {
             this.showError('Configuração incompleta', 'É necessário ter pelo menos uma etapa configurada.');
             return;
         }
 
-        // Converter para string JSON com formatação adequada
         let configJSON;
         try {
             configJSON = this.prepareConfigJSON();
@@ -438,15 +416,11 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         })
         .then(configId => {
             console.log('Resposta do salvamento, ID:', configId);
-            // Se a operação foi bem-sucedida e retornou um ID
             if (configId) {
-                // Mostrar mensagem de sucesso
                 this.showSuccess('Configuração Salva', 'A configuração foi salva com sucesso!');
                 
-                // Recarregar todas as configurações de forma forçada
                 return this.refreshConfigurations()
                     .then(() => {
-                        // Limpar o formulário e esconder todos os seus elementos após recarregar a lista
                         this.initializeConfiguration();
                         this.scrollToTable = true;
                         return configId;
@@ -461,12 +435,10 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         });
     }
     
-    // Método para atualizar a lista de configurações
     refreshConfigurations() {
         this.isLoading = true;
         console.log('Buscando configurações atualizadas do servidor...');
         
-        // Chamada imperativa para buscar as configurações mais recentes
         return getSavedConfigurations()
             .then(configs => {
                 this.isLoading = false;
@@ -474,20 +446,16 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                 if (configs) {
                     console.log('Configurações carregadas do servidor:', configs.length);
                     
-                    // Verificar se cada configuração tem o ConfigJSON__c
                     configs.forEach(config => {
                         if (!config.ConfigJSON__c) {
                             console.warn('Configuração sem JSON:', config.Id, config.Name);
                         }
                     });
                     
-                    // Limpar e substituir toda a matriz de configurações
                     this.savedConfigurations = [];
                     
-                    // Atualizar os dados com os valores mais recentes
                     this.savedConfigurations = JSON.parse(JSON.stringify(configs));
                     
-                    // Forçar a atualização de quaisquer componentes dependentes
                     this.dispatchEvent(new CustomEvent('refreshcomplete'));
                     
                     console.log('Configurações atualizadas na interface:', this.savedConfigurations.length);
@@ -506,15 +474,12 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
             });
     }
 
-    // Lifecycle hook para executar ações após renderização
     renderedCallback() {
-        // Se a flag de scroll estiver ativa, rolar até a tabela
         if (this.scrollToTable) {
             const tableSection = this.template.querySelector('.slds-m-top_large');
             if (tableSection) {
                 tableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            // Resetar a flag para evitar scrolls repetidos
             this.scrollToTable = false;
         }
     }
@@ -537,39 +502,32 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         console.log('Carregando configuração:', this.selectedConfiguration);
         console.log('ConfigJSON__c:', this.selectedConfiguration.ConfigJSON__c);
         
-        // Carregar campos do objeto selecionado
         this.loadPicklistFields();
         this.loadObjectFields();
         
-        // Parsear configuração JSON
         try {
             let configJSON = this.selectedConfiguration.ConfigJSON__c;
             
-            // Verificar se o JSON existe
             if (!configJSON) {
                 this.showError('Configuração inválida', 'O JSON de configuração está vazio ou não existe.');
                 console.error('JSON de configuração vazio:', this.selectedConfiguration);
                 return;
             }
             
-            // Tentar fazer o parse do JSON
             const config = JSON.parse(configJSON);
             console.log('JSON parseado com sucesso:', config);
             
-            // Verificar se há etapas definidas
             if (!config.steps || config.steps.length === 0) {
                 this.showError('Configuração inválida', 'A configuração não possui etapas definidas.');
                 console.error('Configuração sem etapas:', config);
                 return;
             }
             
-            // Recuperar valores do campo de status
             getPicklistValues({ objectName: this.selectedObject, fieldName: this.selectedStatusField })
                 .then(result => {
                     this.statusFieldValues = result;
                     console.log('Valores de status obtidos:', result);
                     
-                    // Mapear etapas com os valores do campo de status
                     this.steps = result.map(item => {
                         const existingStep = config.steps.find(s => s.etapa === item.value);
                         console.log(`Etapa ${item.value}:`, existingStep);
@@ -586,15 +544,12 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                     
                     console.log('Etapas mapeadas:', this.steps);
                     
-                    // Carregar listas relacionadas
                     this.relatedLists = Array.isArray(config.relatedLists) ? config.relatedLists : [];
                     console.log('Listas relacionadas:', this.relatedLists);
                     
-                    // Marcar etapas como concluídas
                     this.completedSteps.objeto = true;
                     this.completedSteps.etapas = true;
                     
-                    // Ir para a aba de etapas
                     this.currentTab = 'etapas';
                 })
                 .catch(error => {
@@ -607,7 +562,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
     }
 
-    // Ações na tabela de configurações
     handleRowAction(event) {
         const action = event.detail.action;
         const row = event.detail.row;
@@ -624,21 +578,18 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         }
     }
 
-    // Exibir modal de confirmação para exclusão
     showDeleteConfirmation(row) {
         this.configToDeleteId = row.Id;
         this.configToDeleteName = row.Name;
         this.showDeleteModal = true;
     }
 
-    // Fechar modal de confirmação
     closeDeleteModal() {
         this.showDeleteModal = false;
         this.configToDeleteId = '';
         this.configToDeleteName = '';
     }
 
-    // Confirmar e executar a exclusão
     confirmDeleteConfiguration() {
         if (!this.configToDeleteId) return;
         
@@ -648,7 +599,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                 if (result) {
                     this.showSuccess('Configuração Excluída', 'A configuração foi excluída com sucesso!');
                     
-                    // Atualizar lista de configurações usando o método atualizado
                     return this.refreshConfigurations()
                         .then(() => {
                             this.closeDeleteModal();
@@ -727,10 +677,17 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         );
     }
 
-    // Método para cancelar edição e voltar ao estado inicial
     cancelEdit() {
         this.initializeConfiguration();
-        this.scrollToTable = true; // Rolar para a tabela de configurações
+        this.scrollToTable = true;
         this.showSuccess('Edição cancelada', 'Você saiu do modo de edição');
+    }
+
+    handleDeleteConfigFromList(event) {
+        const configId = event.currentTarget.dataset.id;
+        const config = this.savedConfigurations.find(c => c.Id === configId);
+        if (config) {
+            this.showDeleteConfirmation(config);
+        }
     }
 } 

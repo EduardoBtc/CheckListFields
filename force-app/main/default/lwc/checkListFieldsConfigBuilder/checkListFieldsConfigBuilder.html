@@ -1,12 +1,10 @@
 <template>
     <lightning-card title={cardTitle} icon-name="custom:custom18">
         <div class="slds-p-around_medium">
-            <!-- Spinner para feedback visual durante carregamentos -->
             <template if:true={isLoading}>
                 <lightning-spinner alternative-text="Carregando" size="medium"></lightning-spinner>
             </template>
 
-            <!-- Indicador de Progresso -->
             <lightning-progress-indicator current-step={currentStep} type="path" variant="base">
                 <lightning-progress-step label="Selecionar Objeto" value="objeto"
                     onclick={navigateToStep}></lightning-progress-step>
@@ -18,9 +16,7 @@
                     onclick={navigateToStep}></lightning-progress-step>
             </lightning-progress-indicator>
 
-            <!-- Conteúdo das etapas -->
             <div class="slds-p-top_medium">
-                <!-- Etapa 1: Seleção de Objeto -->
                 <template if:true={isObjectTabActive}>
                     <div class="slds-grid slds-wrap slds-gutters">
                         <div class="slds-col slds-size_1-of-1 slds-large-size_8-of-12">
@@ -56,12 +52,23 @@
                                     <ul class="slds-has-dividers_bottom-space">
                                         <template for:each={savedConfigurations} for:item="config">
                                             <li key={config.Id} class="slds-item">
-                                                <a href="javascript:void(0);" onclick={handleLoadConfiguration}
-                                                    data-id={config.Id}>
-                                                    <strong>{config.Name}</strong>
-                                                    <p class="slds-text-body_small">{config.TargetObject__c}
-                                                        ({config.StatusField__c})</p>
-                                                </a>
+                                                <div class="slds-grid slds-grid_align-spread slds-p-vertical_xx-small">
+                                                    <div class="slds-truncate">
+                                                        <a href="javascript:void(0);" onclick={handleLoadConfiguration}
+                                                            data-id={config.Id} class="slds-text-link_reset">
+                                                            <strong>{config.Name}</strong>
+                                                            <p class="slds-text-body_small">{config.TargetObject__c}
+                                                                ({config.StatusField__c})</p>
+                                                        </a>
+                                                    </div>
+                                                    <div>
+                                                        <lightning-button-icon icon-name="utility:delete"
+                                                            alternative-text="Excluir" data-id={config.Id}
+                                                            onclick={handleDeleteConfigFromList} variant="border-filled"
+                                                            size="small" class="slds-m-left_x-small">
+                                                        </lightning-button-icon>
+                                                    </div>
+                                                </div>
                                             </li>
                                         </template>
                                     </ul>
@@ -71,7 +78,6 @@
                     </div>
                 </template>
 
-                <!-- Etapa 2: Configuração de Etapas -->
                 <template if:true={isStepsTabActive}>
                     <template if:true={hasSteps}>
                         <div class="slds-text-heading_small slds-p-bottom_medium">
@@ -103,7 +109,6 @@
                     </template>
                 </template>
 
-                <!-- Etapa 3: Listas Relacionadas -->
                 <template if:true={isRelatedTabActive}>
                     <div class="slds-text-heading_small slds-p-bottom_medium">
                         Configure as listas relacionadas a serem verificadas
@@ -152,7 +157,6 @@
                     </div>
                 </template>
 
-                <!-- Etapa 4: Revisão e Salvar -->
                 <template if:true={isReviewTabActive}>
                     <div class="slds-text-heading_small slds-p-bottom_medium">
                         Revisar e Salvar Configuração
@@ -199,7 +203,6 @@
         </div>
     </lightning-card>
 
-    <!-- Lista de Todas as Configurações -->
     <div class="slds-m-top_large">
         <lightning-card title="Todas as Configurações" icon-name="standard:settings">
             <div class="slds-p-around_medium">
@@ -225,7 +228,6 @@
         </lightning-card>
     </div>
 
-    <!-- Modal para adicionar lista relacionada -->
     <template if:true={showAddRelatedModal}>
         <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
             aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
@@ -264,7 +266,6 @@
         <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 
-    <!-- Modal de confirmação para excluir configuração -->
     <template if:true={showDeleteModal}>
         <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-02" aria-modal="true"
             aria-describedby="modal-content-id-2" class="slds-modal slds-fade-in-open">
