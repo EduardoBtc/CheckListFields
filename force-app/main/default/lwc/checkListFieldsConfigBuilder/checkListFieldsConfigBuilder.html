@@ -23,15 +23,44 @@
                             <lightning-input label="Nome da Configuração" type="text" value={configName}
                                 onchange={handleConfigNameChange} required></lightning-input>
 
-                            <lightning-combobox name="objectSelector" label="Selecione o Objeto" value={selectedObject}
-                                options={availableObjects} onchange={handleObjectChange}
-                                placeholder="-- Selecione um Objeto --" required></lightning-combobox>
+                            <lightning-input label="Selecione o Objeto" type="search" value={objectSearchTerm}
+                                onchange={handleObjectSearchChange} onfocus={handleObjectSearchFocus}
+                                onblur={handleObjectSearchBlur} placeholder="-- Selecione um Objeto --" required>
+                            </lightning-input>
+                            <template if:true={showObjectSuggestions}>
+                                <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid"
+                                    role="listbox" style="max-height: 200px; overflow-y: auto;">
+                                    <template for:each={filteredObjects} for:item="obj">
+                                        <li key={obj.value} role="presentation" class="slds-listbox__item"
+                                            onclick={handleObjectSuggestionClick} data-value={obj.value}>
+                                            <div class="slds-listbox__option slds-listbox__option_plain" role="option">
+                                                <span class="slds-truncate">{obj.label}</span>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
 
                             <template if:true={selectedObject}>
-                                <lightning-combobox name="statusFieldSelector" label="Selecione o Campo de Status"
-                                    value={selectedStatusField} options={picklistFields}
-                                    onchange={handleStatusFieldChange} placeholder="-- Selecione um Campo de Status --"
-                                    required></lightning-combobox>
+                                <lightning-input label="Selecione o Campo de Status" type="search"
+                                    value={statusFieldSearchTerm} onchange={handleStatusFieldSearchChange}
+                                    onfocus={handleStatusFieldSearchFocus} onblur={handleStatusFieldSearchBlur}
+                                    placeholder="-- Selecione um Campo de Status --" required>
+                                </lightning-input>
+                                <template if:true={showStatusFieldSuggestions}>
+                                    <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid"
+                                        role="listbox" style="max-height: 200px; overflow-y: auto;">
+                                        <template for:each={filteredStatusFields} for:item="field">
+                                            <li key={field.value} role="presentation" class="slds-listbox__item"
+                                                onclick={handleStatusFieldSuggestionClick} data-value={field.value}>
+                                                <div class="slds-listbox__option slds-listbox__option_plain"
+                                                    role="option">
+                                                    <span class="slds-truncate">{field.label}</span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
                             </template>
 
                             <div class="slds-p-top_medium">
@@ -98,10 +127,8 @@
                             <div>
                                 <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
                                     disabled={isLoading}></lightning-button>
-                                <template if:true={isEditMode}>
-                                    <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
-                                        class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
-                                </template>
+                                <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
+                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                             </div>
                             <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
                                 disabled={isLoading}></lightning-button>
@@ -147,10 +174,8 @@
                         <div>
                             <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
                                 disabled={isLoading}></lightning-button>
-                            <template if:true={isEditMode}>
-                                <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
-                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
-                            </template>
+                            <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
+                                class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                         </div>
                         <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
                             disabled={isLoading}></lightning-button>
@@ -190,10 +215,8 @@
                         <div>
                             <lightning-button variant="neutral" label="Voltar" onclick={handlePreviousStep}
                                 disabled={isLoading}></lightning-button>
-                            <template if:true={isEditMode}>
-                                <lightning-button variant="destructive" label="Cancelar Edição" onclick={cancelEdit}
-                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
-                            </template>
+                            <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
+                                class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                         </div>
                         <lightning-button variant="success" label="Salvar Configuração" onclick={saveConfig}
                             disabled={isLoading}></lightning-button>

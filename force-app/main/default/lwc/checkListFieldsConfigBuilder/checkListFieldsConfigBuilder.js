@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 import { LightningElement, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getAvailableObjects from '@salesforce/apex/CheckListFieldsConfigController.getAvailableObjects';
@@ -22,7 +23,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track isLoading = false;
     @track currentTab = 'objeto';
     @track selectedConfiguration;
-    @track isEditMode = false;
 
     @track showAddRelatedModal = false;
     @track selectedRelatedObject = '';
@@ -36,6 +36,12 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track configToDeleteName = '';
 
     scrollToTable = false;
+
+    @track objectSearchTerm = '';
+    @track showObjectSuggestions = false;
+
+    @track statusFieldSearchTerm = '';
+    @track showStatusFieldSuggestions = false;
 
     configColumns = [
         { 
@@ -133,7 +139,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.selectedStatusField = '';
         this.configName = '';
         this.currentTab = 'objeto';
-        this.isEditMode = false;
         this.selectedConfiguration = null;
         this.resetCompletedSteps();
     }
@@ -497,7 +502,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.configName = this.selectedConfiguration.Name;
         this.selectedObject = this.selectedConfiguration.TargetObject__c;
         this.selectedStatusField = this.selectedConfiguration.StatusField__c;
-        this.isEditMode = true;
         
         console.log('Carregando configuração:', this.selectedConfiguration);
         console.log('ConfigJSON__c:', this.selectedConfiguration.ConfigJSON__c);
@@ -651,9 +655,6 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     }
 
     get cardTitle() {
-        if (this.isEditMode) {
-            return `Editando: ${this.configName}`;
-        }
         return 'Configuração CheckList Fields';
     }
 
@@ -689,5 +690,75 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         if (config) {
             this.showDeleteConfirmation(config);
         }
+    }
+
+    get filteredObjects() {
+        if (!this.objectSearchTerm) {
+            return this.availableObjects;
+        }
+        const term = this.objectSearchTerm.toLowerCase();
+        return this.availableObjects.filter(obj =>
+            obj.label.toLowerCase().includes(term)
+        );
+    }
+
+    handleObjectSearchChange(event) {
+        this.objectSearchTerm = event.target.value;
+        this.showObjectSuggestions = true;
+    }
+
+    handleObjectSearchFocus() {
+        this.showObjectSuggestions = true;
+    }
+
+    handleObjectSearchBlur() {
+        setTimeout(() => {
+            this.showObjectSuggestions = false;
+        }, 200);
+    }
+
+    handleObjectSuggestionClick(event) {
+        const value = event.currentTarget.dataset.value;
+        this.selectedObject = value;
+        this.objectSearchTerm = this.availableObjects.find(obj => obj.value === value)?.label || '';
+        this.showObjectSuggestions = false;
+        this.loadPicklistFields();
+        this.loadObjectFields();
+    }
+
+    get filteredStatusFields() {
+        if (!this.statusFieldSearchTerm) {
+            return this.picklistFields;
+        }
+        const term = this.statusFieldSearchTerm.toLowerCase();
+        return this.picklistFields.filter(field =>
+            field.label.toLowerCase().includes(term)
+        );
+    }
+
+    handleStatusFieldSearchChange(event) {
+        this.statusFieldSearchTerm = event.target.value;
+        this.showStatusFieldSuggestions = true;
+    }
+
+    handleStatusFieldSearchFocus() {
+        this.showStatusFieldSuggestions = true;
+    }
+
+    handleStatusFieldSearchBlur() {
+        setTimeout(() => {
+            this.showStatusFieldSuggestions = false;
+        }, 200);
+    }
+
+    handleStatusFieldSuggestionClick(event) {
+        const value = event.currentTarget.dataset.value;
+        this.selectedStatusField = value;
+        this.statusFieldSearchTerm = this.picklistFields.find(field => field.value === value)?.label || '';
+        this.showStatusFieldSuggestions = false;
+    }
+
+    get cancelButtonLabel() {
+        return 'Cancelar';
     }
 } 
