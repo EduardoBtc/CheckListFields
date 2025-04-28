@@ -8,6 +8,7 @@ import checkRelatedList from '@salesforce/apex/CheckListFieldsController.getRela
 import getConfiguration from '@salesforce/apex/CheckListFieldsController.getConfiguration';
 import { subscribe, publish, MessageContext } from 'lightning/messageService';
 import COMPONENT_COMMUNICATION_CHANNEL from "@salesforce/messageChannel/CheckListFieldsToSatusChannel__c";
+import getCurrentUserProfileName from '@salesforce/apex/CheckListFieldsConfigController.getCurrentUserProfileName';
 
 export default class CheckListFieldsToStatus extends LightningElement {
     @api recordId;
@@ -28,6 +29,7 @@ export default class CheckListFieldsToStatus extends LightningElement {
     isLoading = true;
     hasError = false;
     errorMessage = '';
+    userProfileName = '';
 
     @wire(MessageContext) 
     messageContext;
@@ -74,6 +76,7 @@ export default class CheckListFieldsToStatus extends LightningElement {
         }
 
         try {
+            this.userProfileName = await getCurrentUserProfileName();
             const config = await getConfiguration({ configId: this.configId });
             if (!config) {
                 this.hasError = true;
@@ -82,13 +85,11 @@ export default class CheckListFieldsToStatus extends LightningElement {
                 return;
             }
 
-            // Parsear configuração JSON
             const parsedConfig = JSON.parse(config.ConfigJSON__c);
             this._parsedConfig = parsedConfig;
             this._steps = parsedConfig.steps || [];
             this._relatedLists = parsedConfig.relatedLists || [];
             
-            // Se já tivermos o status atual, atualizar a verificação
             if (this.currentStatus) {
                 await this.handleStatusChange(this.currentStatus);
             }
@@ -124,14 +125,12 @@ export default class CheckListFieldsToStatus extends LightningElement {
         this.statusVerifyFields = false;
         this.fieldsVerifyMap = {};
 
-        // Se a configuração ainda não foi carregada, aguarde
         if (!this._parsedConfig) {
             await this.loadConfiguration();
         }
 
         await this.fetchRelatedRecords(status);
 
-        // Procurar a etapa correspondente ao status atual
         const matchingStep = this._steps.find(step => step.etapa === status);
         if (matchingStep && matchingStep.campos) {
             await this.verifyFildsFillStage(matchingStep.campos);
@@ -169,9 +168,9 @@ export default class CheckListFieldsToStatus extends LightningElement {
         const updates = {};
         const promises = [];
 
-        // Coletar todas as promessas de verificação de listas relacionadas
         this._relatedLists
-            .filter(relatedList => Array.isArray(relatedList.stages) && relatedList.stages.includes(status) && relatedList.objectApiName && relatedList.fieldRelationship)
+            .filter(relatedList => Array.isArray(relatedList.stages) && relatedList.stages.includes(status) && relatedList.objectApiName && relatedList.fieldRelationship &&
+                (!relatedList.profileNames || relatedList.profileNames.length === 0 || (this.userProfileName && relatedList.profileNames.includes(this.userProfileName))))
             .forEach(relatedList => {
                 const promise = this.checkRelatedListJS({
                     relatedObjectName: relatedList.objectApiName,
@@ -186,7 +185,6 @@ export default class CheckListFieldsToStatus extends LightningElement {
                 promises.push(promise);
             });
 
-        // Aguardar todas as promessas serem concluídas
         await Promise.all(promises);
 
         this.fieldsVerifyMap = {

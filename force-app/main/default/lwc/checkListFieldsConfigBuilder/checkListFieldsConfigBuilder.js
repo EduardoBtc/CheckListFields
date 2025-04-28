@@ -49,6 +49,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track relatedObjectSearchTerm = '';
     @track showRelatedObjectSuggestions = false;
 
+    @track selectedRelatedProfiles = [];
+
     configColumns = [
         { 
             label: 'ID', 
@@ -324,6 +326,7 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.selectedRelatedField = '';
         this.selectedRelatedStages = [];
         this.selectedRelatedLabel = '';
+        this.selectedRelatedProfiles = [];
     }
 
     handleRelatedObjectChange(event) {
@@ -342,6 +345,10 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.selectedRelatedStages = event.detail.value;
     }
 
+    handleRelatedProfilesChange(event) {
+        this.selectedRelatedProfiles = event.detail.value;
+    }
+
     saveRelatedList() {
         if (!this.selectedRelatedObject || !this.selectedRelatedField || 
             !this.selectedRelatedStages.length || !this.selectedRelatedLabel) {
@@ -352,7 +359,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
             objectApiName: this.selectedRelatedObject,
             fieldRelationship: this.selectedRelatedField,
             label: this.selectedRelatedLabel,
-            stages: this.selectedRelatedStages
+            stages: this.selectedRelatedStages,
+            profileNames: this.selectedRelatedProfiles || []
         };
         this.relatedLists = [...this.relatedLists, newRelatedList];
         this.closeRelatedModal();

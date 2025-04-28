@@ -311,6 +311,12 @@
                         selected-label="Etapas selecionadas" options={statusFieldValues} value={selectedRelatedStages}
                         onchange={handleRelatedStagesChange} disable-reordering>
                     </lightning-dual-listbox>
+
+                    <lightning-dual-listbox name="relatedProfilesSelector"
+                        label="Perfis para validação desta lista relacionada" source-label="Perfis disponíveis"
+                        selected-label="Perfis selecionados" options={availableProfiles} value={selectedRelatedProfiles}
+                        onchange={handleRelatedProfilesChange} disable-reordering>
+                    </lightning-dual-listbox>
                 </div>
                 <footer class="slds-modal__footer">
                     <lightning-button variant="neutral" label="Cancelar" onclick={closeRelatedModal}></lightning-button>
