@@ -1,6 +1,5 @@
 <template>
     <lightning-card title="CheckList das Pendências" icon-name="custom:custom18">
-        <!-- Spinner de carregamento -->
         <template if:true={isLoading}>
             <div class="slds-is-relative slds-p-around_small">
                 <lightning-spinner alternative-text="Carregando" size="small"></lightning-spinner>
@@ -8,7 +7,6 @@
             </div>
         </template>
 
-        <!-- Mensagem de erro -->
         <template if:true={hasError}>
             <div class="slds-illustration slds-illustration_small slds-p-around_small">
                 <lightning-icon icon-name="utility:error" alternative-text="Erro" size="small"

@@ -10,7 +10,6 @@ export default class CheckListFieldsStepEditor extends LightningElement {
     @track showSelectedOnly = false;
     
     connectedCallback() {
-        // Inicializa os campos selecionados
         if (this.step.selectedFields) {
             this.selectedFields = [...this.step.selectedFields];
         }
@@ -20,7 +19,6 @@ export default class CheckListFieldsStepEditor extends LightningElement {
         const field = event.target.dataset.field;
         const isChecked = event.target.checked;
         
-        // Despacha o evento para o componente pai
         this.dispatchEvent(new CustomEvent('fieldsselection', {
             detail: {
                 stepIndex: this.stepIndex,
@@ -39,7 +37,6 @@ export default class CheckListFieldsStepEditor extends LightningElement {
     }
     
     handleSelectAll() {
-        // Selecionar todos os campos visíveis
         const checkboxes = this.template.querySelectorAll('lightning-input[data-field]');
         
         checkboxes.forEach(checkbox => {
@@ -57,7 +54,6 @@ export default class CheckListFieldsStepEditor extends LightningElement {
     }
     
     handleDeselectAll() {
-        // Desmarcar todos os campos visíveis
         const checkboxes = this.template.querySelectorAll('lightning-input[data-field]');
         
         checkboxes.forEach(checkbox => {
@@ -79,15 +75,12 @@ export default class CheckListFieldsStepEditor extends LightningElement {
             return [];
         }
         
-        // Aplicar filtros
         return [...this.objectFields]
             .filter(field => {
-                // Filtrar por termo de pesquisa
                 const matchesSearch = !this.searchTerm || 
                     field.label.toLowerCase().includes(this.searchTerm) || 
                     field.value.toLowerCase().includes(this.searchTerm);
                 
-                // Filtrar por campos selecionados
                 const isSelected = this.isFieldSelected(field.value);
                 const showBySelection = !this.showSelectedOnly || isSelected;
                 
@@ -119,7 +112,6 @@ export default class CheckListFieldsStepEditor extends LightningElement {
             return false;
         }
         
-        // Comparação exata do valor do campo
         return this.step.selectedFields.includes(fieldValue);
     }
 } 

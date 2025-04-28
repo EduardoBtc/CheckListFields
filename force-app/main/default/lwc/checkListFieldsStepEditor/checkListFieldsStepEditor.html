@@ -4,7 +4,6 @@
             Selecione os campos a serem verificados para {step.label}
         </div>
 
-        <!-- Barra de ferramentas de pesquisa e filtro -->
         <div class="slds-grid slds-gutters slds-m-bottom_medium">
             <div class="slds-col slds-size_1-of-1 slds-medium-size_6-of-12">
                 <lightning-input type="search" label="Pesquisar campos" placeholder="Digite para pesquisar..."
@@ -27,12 +26,10 @@
             </div>
         </div>
 
-        <!-- Contador de seleção -->
         <div class="slds-text-body_small slds-m-bottom_small">
             {selectedCount} de {totalCount} campos selecionados
         </div>
 
-        <!-- Lista de campos com checkboxes -->
         <div class="slds-grid slds-wrap slds-gutters_direct slds-scrollable" style="max-height: 400px;">
             <template for:each={filteredFields} for:item="field">
                 <div key={field.value}
@@ -44,7 +41,6 @@
             </template>
         </div>
 
-        <!-- Mensagem quando não há campos -->
         <template if:false={filteredFields.length}>
             <div class="slds-illustration slds-illustration_small">
                 <div class="slds-text-longform">
