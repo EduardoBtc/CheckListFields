@@ -8,6 +8,7 @@ import getObjectFields from '@salesforce/apex/CheckListFieldsConfigController.ge
 import saveConfiguration from '@salesforce/apex/CheckListFieldsConfigController.saveConfiguration';
 import getSavedConfigurations from '@salesforce/apex/CheckListFieldsConfigController.getSavedConfigurations';
 import deleteConfiguration from '@salesforce/apex/CheckListFieldsConfigController.deleteConfiguration';
+import getAvailableProfiles from '@salesforce/apex/CheckListFieldsConfigController.getAvailableProfiles';
 
 export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track selectedObject = '';
@@ -27,7 +28,7 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
     @track showAddRelatedModal = false;
     @track selectedRelatedObject = '';
     @track selectedRelatedField = '';
-    @track selectedRelatedStage = '';
+    @track selectedRelatedStages = [];
     @track selectedRelatedLabel = '';
     @track availableRelatedObjects = [];
 
@@ -42,6 +43,11 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
 
     @track statusFieldSearchTerm = '';
     @track showStatusFieldSuggestions = false;
+
+    @track availableProfiles = [];
+
+    @track relatedObjectSearchTerm = '';
+    @track showRelatedObjectSuggestions = false;
 
     configColumns = [
         { 
@@ -130,6 +136,13 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.scrollToTable = false;
         
         this.refreshConfigurations();
+        getAvailableProfiles()
+            .then(result => {
+                this.availableProfiles = result;
+            })
+            .catch(error => {
+                this.showError('Erro ao carregar perfis', error);
+            });
     }
 
     initializeConfiguration() {
@@ -204,7 +217,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                         etapa: item.value,
                         label: item.label,
                         campos: '',
-                        selectedFields: []
+                        selectedFields: [],
+                        selectedProfiles: []
                     };
                 });
                 this.isLoading = false;
@@ -308,7 +322,7 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.showAddRelatedModal = false;
         this.selectedRelatedObject = '';
         this.selectedRelatedField = '';
-        this.selectedRelatedStage = '';
+        this.selectedRelatedStages = [];
         this.selectedRelatedLabel = '';
     }
 
@@ -324,24 +338,22 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         this.selectedRelatedLabel = event.target.value;
     }
 
-    handleRelatedStageChange(event) {
-        this.selectedRelatedStage = event.detail.value;
+    handleRelatedStagesChange(event) {
+        this.selectedRelatedStages = event.detail.value;
     }
 
     saveRelatedList() {
         if (!this.selectedRelatedObject || !this.selectedRelatedField || 
-            !this.selectedRelatedStage || !this.selectedRelatedLabel) {
+            !this.selectedRelatedStages.length || !this.selectedRelatedLabel) {
             this.showError('Campos obrigatórios', 'Preencha todos os campos para adicionar uma lista relacionada.');
             return;
         }
-
         const newRelatedList = {
             objectApiName: this.selectedRelatedObject,
             fieldRelationship: this.selectedRelatedField,
             label: this.selectedRelatedLabel,
-            stage: this.selectedRelatedStage
+            stages: this.selectedRelatedStages
         };
-
         this.relatedLists = [...this.relatedLists, newRelatedList];
         this.closeRelatedModal();
     }
@@ -357,11 +369,11 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         const config = {
             steps: this.steps.map(step => ({
                 etapa: step.etapa,
-                campos: step.campos
+                campos: step.campos,
+                profileNames: step.selectedProfiles || []
             })),
             relatedLists: this.relatedLists
         };
-
         return JSON.stringify(config, null, 2);
     }
 
@@ -369,7 +381,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
         const config = {
             steps: this.steps.map(step => ({
                 etapa: step.etapa,
-                campos: step.campos || ''
+                campos: step.campos || '',
+                profileNames: step.selectedProfiles || []
             })),
             relatedLists: this.relatedLists || []
         };
@@ -542,7 +555,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                             campos: existingStep ? existingStep.campos : '',
                             selectedFields: existingStep && existingStep.campos 
                                 ? existingStep.campos.split(',')
-                                : []
+                                : [],
+                            selectedProfiles: existingStep && existingStep.profileNames ? existingStep.profileNames : []
                         };
                     });
                     
@@ -550,6 +564,8 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
                     
                     this.relatedLists = Array.isArray(config.relatedLists) ? config.relatedLists : [];
                     console.log('Listas relacionadas:', this.relatedLists);
+                    
+                    this.selectedRelatedStages = config.relatedLists.map(list => list.stages || []);
                     
                     this.completedSteps.objeto = true;
                     this.completedSteps.etapas = true;
@@ -760,5 +776,56 @@ export default class CheckListFieldsConfigBuilder extends LightningElement {
 
     get cancelButtonLabel() {
         return 'Cancelar';
+    }
+
+    handleProfileSelection(event) {
+        const stepIndex = event.target.dataset.index;
+        this.steps[stepIndex].selectedProfiles = event.detail.value;
+    }
+
+    get filteredRelatedObjects() {
+        if (!this.relatedObjectSearchTerm) {
+            return this.availableRelatedObjects;
+        }
+        const term = this.relatedObjectSearchTerm.toLowerCase();
+        return this.availableRelatedObjects.filter(obj =>
+            obj.label.toLowerCase().includes(term)
+        );
+    }
+
+    handleRelatedObjectSearchChange(event) {
+        this.relatedObjectSearchTerm = event.target.value;
+        this.showRelatedObjectSuggestions = true;
+    }
+
+    handleRelatedObjectSearchFocus() {
+        this.showRelatedObjectSuggestions = true;
+    }
+
+    handleRelatedObjectSearchBlur() {
+        setTimeout(() => {
+            this.showRelatedObjectSuggestions = false;
+        }, 200);
+    }
+
+    handleRelatedObjectSuggestionClick(event) {
+        const value = event.currentTarget.dataset.value;
+        this.selectedRelatedObject = value;
+        this.relatedObjectSearchTerm = this.availableRelatedObjects.find(obj => obj.value === value)?.label || '';
+        this.showRelatedObjectSuggestions = false;
+    }
+
+    getRelatedStagesLabel(list) {
+        if (Array.isArray(list.stages) && list.stages.length) {
+            return list.stages.join(', ');
+        }
+        return 'Todas';
+    }
+
+    get relatedListsWithStagesLabel() {
+        return (this.relatedLists || []).map(list => ({
+            ...list,
+            stagesLabel: Array.isArray(list.stages) && list.stages.length ? list.stages.join(', ') : 'Todas'
+        }));
     }
 } 

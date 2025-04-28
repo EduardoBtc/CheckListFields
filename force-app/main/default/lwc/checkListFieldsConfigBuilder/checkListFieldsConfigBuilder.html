@@ -119,6 +119,12 @@
                                     <c-check-list-fields-step-editor step-index={index} step={step}
                                         object-fields={objectFields} onfieldsselection={handleFieldSelection}>
                                     </c-check-list-fields-step-editor>
+                                    <lightning-dual-listbox name="profileSelector"
+                                        label="Perfis para validação desta etapa" source-label="Perfis disponíveis"
+                                        selected-label="Perfis selecionados" options={availableProfiles}
+                                        value={step.selectedProfiles} data-index={index}
+                                        onchange={handleProfileSelection} disable-reordering>
+                                    </lightning-dual-listbox>
                                 </lightning-tab>
                             </template>
                         </lightning-tabset>
@@ -130,8 +136,10 @@
                                 <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
                                     class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                             </div>
-                            <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
-                                disabled={isLoading}></lightning-button>
+                            <div>
+                                <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
+                                    class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                            </div>
                         </div>
                     </template>
                 </template>
@@ -147,14 +155,14 @@
                     <template if:true={hasRelatedLists}>
                         <div class="slds-box slds-theme_default">
                             <ul class="slds-has-dividers_bottom-space">
-                                <template for:each={relatedLists} for:item="list" for:index="index">
+                                <template for:each={relatedListsWithStagesLabel} for:item="list" for:index="index">
                                     <li key={list.fieldRelationship} class="slds-item" data-index={index}>
                                         <div class="slds-grid slds-grid_align-spread">
                                             <div>
                                                 <strong>{list.label}</strong>
                                                 <p class="slds-text-body_small">
                                                     Objeto: {list.objectApiName} | Campo: {list.fieldRelationship} |
-                                                    Etapa: {list.stage}
+                                                    Etapa(s): {list.stagesLabel}
                                                 </p>
                                             </div>
                                             <div>
@@ -177,8 +185,10 @@
                             <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
                                 class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                         </div>
-                        <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
-                            disabled={isLoading}></lightning-button>
+                        <div>
+                            <lightning-button variant="brand" label="Próximo" onclick={handleNextStep}
+                                class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                        </div>
                     </div>
                 </template>
 
@@ -218,8 +228,10 @@
                             <lightning-button variant="destructive" label={cancelButtonLabel} onclick={cancelEdit}
                                 class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
                         </div>
-                        <lightning-button variant="success" label="Salvar Configuração" onclick={saveConfig}
-                            disabled={isLoading}></lightning-button>
+                        <div>
+                            <lightning-button variant="success" label="Salvar Configuração" onclick={saveConfig}
+                                class="slds-m-left_x-small" disabled={isLoading}></lightning-button>
+                        </div>
                     </div>
                 </template>
             </div>
@@ -269,10 +281,24 @@
                     <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Adicionar Lista Relacionada</h2>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                    <lightning-combobox name="relatedObjectSelector" label="Selecione o Objeto Relacionado"
-                        value={selectedRelatedObject} options={availableRelatedObjects}
-                        onchange={handleRelatedObjectChange} placeholder="-- Selecione um Objeto --"
-                        required></lightning-combobox>
+                    <lightning-input label="Selecione o Objeto Relacionado" type="search"
+                        value={relatedObjectSearchTerm} onchange={handleRelatedObjectSearchChange}
+                        onfocus={handleRelatedObjectSearchFocus} onblur={handleRelatedObjectSearchBlur}
+                        placeholder="-- Selecione um Objeto --" required>
+                    </lightning-input>
+                    <template if:true={showRelatedObjectSuggestions}>
+                        <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid" role="listbox"
+                            style="max-height: 200px; overflow-y: auto;">
+                            <template for:each={filteredRelatedObjects} for:item="obj">
+                                <li key={obj.value} role="presentation" class="slds-listbox__item"
+                                    onclick={handleRelatedObjectSuggestionClick} data-value={obj.value}>
+                                    <div class="slds-listbox__option slds-listbox__option_plain" role="option">
+                                        <span class="slds-truncate">{obj.label}</span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
 
                     <lightning-input label="Campo de Relacionamento" placeholder="Ex: AccountId"
                         value={selectedRelatedField} onchange={handleRelatedFieldChange} required></lightning-input>
@@ -280,9 +306,11 @@
                     <lightning-input label="Rótulo na Interface" placeholder="Ex: Contatos" value={selectedRelatedLabel}
                         onchange={handleRelatedLabelChange} required></lightning-input>
 
-                    <lightning-combobox name="relatedStageSelector" label="Selecione a Etapa para Verificação"
-                        value={selectedRelatedStage} options={statusFieldValues} onchange={handleRelatedStageChange}
-                        placeholder="-- Selecione uma Etapa --" required></lightning-combobox>
+                    <lightning-dual-listbox name="relatedStagesSelector"
+                        label="Etapas/Status para validar esta lista relacionada" source-label="Etapas disponíveis"
+                        selected-label="Etapas selecionadas" options={statusFieldValues} value={selectedRelatedStages}
+                        onchange={handleRelatedStagesChange} disable-reordering>
+                    </lightning-dual-listbox>
                 </div>
                 <footer class="slds-modal__footer">
                     <lightning-button variant="neutral" label="Cancelar" onclick={closeRelatedModal}></lightning-button>

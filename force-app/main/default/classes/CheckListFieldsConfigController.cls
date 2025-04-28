@@ -222,6 +222,26 @@ public without sharing class CheckListFieldsConfigController {
         }
     }
     
+    /**
+     * Retorna o nome do perfil do usuário logado
+     */
+    @AuraEnabled(cacheable=true)
+    public static String getCurrentUserProfileName() {
+        return [SELECT Profile.Name FROM User WHERE Id = :UserInfo.getUserId()].Profile.Name;
+    }
+    
+    /**
+     * Retorna todos os perfis ativos
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getAvailableProfiles() {
+        List<Map<String, String>> result = new List<Map<String, String>>();
+        for (Profile p : [SELECT Id, Name FROM Profile WHERE UserType = 'Standard' ORDER BY Name]) {
+            result.add(new Map<String, String>{'value' => p.Name, 'label' => p.Name});
+        }
+        return result;
+    }
+    
     // Classes auxiliares para ordenação
     private class ObjectComparator implements Comparator<Map<String, String>> {
         public Integer compare(Map<String, String> obj1, Map<String, String> obj2) {

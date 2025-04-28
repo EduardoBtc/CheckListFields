@@ -1,8 +1,20 @@
 public without sharing class CheckListFieldsController {
 
     @AuraEnabled
-    public static Map<String, Boolean> verifyFildsFillStage(String recordId, String fieldsQuery, String objectApiName) {
+    public static Map<String, Boolean> verifyFildsFillStage(String recordId, String fieldsQuery, String objectApiName, List<String> profileNames) {
         try {
+            // Busca o nome do perfil do usuário logado
+            String userProfileName = [SELECT Profile.Name FROM User WHERE Id = :UserInfo.getUserId()].Profile.Name;
+
+            // Se profileNames foi informado e não contém o perfil do usuário, retorna tudo true (sem validação)
+            if (profileNames != null && !profileNames.isEmpty() && !profileNames.contains(userProfileName)) {
+                Map<String, Boolean> skipMap = new Map<String, Boolean>();
+                for (String field : fieldsQuery.split(',')) {
+                    skipMap.put(field.trim(), true);
+                }
+                return skipMap;
+            }
+
             if (String.isBlank(recordId) || String.isBlank(fieldsQuery) || String.isBlank(objectApiName)) 
                 throw new AuraHandledException('Invalid input parameters');
 
@@ -13,23 +25,16 @@ public without sharing class CheckListFieldsController {
             Map<String, Boolean> mapFields = new Map<String, Boolean>();
 
             for (String field : fieldsQuery.split(',')) {
-
                 String trimmedField = field.trim();
-
                 if (!fieldMap.containsKey(trimmedField)) 
                     continue;
-
                 Schema.DescribeFieldResult describe = fieldMap.get(trimmedField).getDescribe();
                 Object value = relatedRecord.get(trimmedField);
-
                 Boolean isFilled = value != null;
-                
                 if (value instanceof String) 
                     isFilled = !String.isBlank((String)value);
-
                 mapFields.put(describe.getLabel(), isFilled);
             }
-
             return mapFields;
         } catch (Exception e) {
             throw new AuraHandledException('Error: ' + e.getMessage());

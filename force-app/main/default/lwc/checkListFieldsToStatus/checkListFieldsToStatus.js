@@ -171,7 +171,7 @@ export default class CheckListFieldsToStatus extends LightningElement {
 
         // Coletar todas as promessas de verificação de listas relacionadas
         this._relatedLists
-            .filter(relatedList => relatedList.stage === status && relatedList.objectApiName && relatedList.fieldRelationship)
+            .filter(relatedList => Array.isArray(relatedList.stages) && relatedList.stages.includes(status) && relatedList.objectApiName && relatedList.fieldRelationship)
             .forEach(relatedList => {
                 const promise = this.checkRelatedListJS({
                     relatedObjectName: relatedList.objectApiName,
@@ -183,7 +183,6 @@ export default class CheckListFieldsToStatus extends LightningElement {
                 .catch(error => {
                     console.error('Erro ao verificar lista relacionada:', error);
                 });
-                
                 promises.push(promise);
             });
 
